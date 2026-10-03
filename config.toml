@@ -1,0 +1,50 @@
+# ytt configuration. Every key is optional — the values below are the defaults.
+# Relative data_dir is resolved against the folder containing this file.
+
+[paths]
+data_dir = "data"                   # db, log and one folder per channel live here
+db_file = "ytt.sqlite3"
+log_file = "ytt.log"
+audio_subdir = "audio"              # data/<Channel>/audio/<video_id>.mp3
+transcripts_subdir = "transcripts"  # data/<Channel>/transcripts/<Playlist>/<NNN - Title [id]>.txt
+output_subdir = "output"            # data/<Channel>/output/<Playlist>.md and _ALL.md
+
+[youtube]
+channel_tabs = ["videos"]           # add "shorts" and/or "streams" to pick those up too
+cookies_from_browser = ""           # "chrome" | "firefox" | "safari" | "edge" — if YouTube asks to sign in
+unsorted_playlist_title = "Без плейлиста"  # virtual playlist for videos outside any playlist
+skip_live = true                    # skip ongoing/upcoming streams; they are picked up later as recordings
+
+[download]
+# Shell command that produces the audio file. Placeholders:
+#   {url}             video URL
+#   {video_id}        11-char id
+#   {output_dir}      data/<Channel>/audio
+#   {output_template} "<output_dir>/<video_id>.%(ext)s"  <- keep it, so the result can be found afterwards
+# Add e.g. --cookies-from-browser chrome here if downloads require a login.
+command = 'yt-dlp --no-playlist --no-overwrites --retries 5 -f bestaudio/best -x --audio-format mp3 --audio-quality 5 -o "{output_template}" "{url}"'
+timeout_sec = 1800
+keep_audio = true                   # false -> delete the mp3 right after a successful transcription
+max_attempts = 3                    # per video; `--retry-errors` resets the counter
+
+[transcribe]
+backend = "mlx_whisper"          # "faster_whisper" (CPU / NVIDIA GPU) or "mlx_whisper" (Apple Silicon Mac)
+model = "large-v3-turbo"            # tiny | base | small | medium | large-v3 | large-v3-turbo (or a HF repo id)
+language = "ru"                     # "" -> auto-detect per video
+device = "auto"                     # faster_whisper: auto | cpu | cuda
+compute_type = "default"            # faster_whisper: default | int8 (fastest on CPU) | float16 (GPU)
+beam_size = 5
+vad_filter = true                   # skip silence before decoding
+condition_on_previous_text = false  # false avoids repetition loops on long talks
+# Text is written in time-coded blocks: [HH:MM:SS] text. A block closes at the first Whisper segment
+# boundary after chunk_sec (so sentences are not cut), after a pause longer than paragraph_gap_sec,
+# or when it grows past paragraph_max_chars. 10 s ~ one or two sentences; 30 s ~ a paragraph.
+chunk_sec = 10.0                    # 0 disables time-based splitting (blocks only by pauses / length)
+paragraph_gap_sec = 2.0
+paragraph_max_chars = 900
+timestamps = true                   # false -> plain text without [HH:MM:SS] (and therefore no links in the digests)
+
+[output]
+timestamp_links = true              # in .md files [HH:MM:SS] becomes [HH:MM:SS](https://youtu.be/<id>?t=<sec>) — click to open the video there
+dedupe_in_playlist_files = false    # true -> in <Playlist>.md a video already transcribed under another playlist gets a one-line reference
+max_name_len = 60                   # max length of folder/file names built from titles

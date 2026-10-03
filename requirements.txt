@@ -1,0 +1,5 @@
+yt-dlp>=2025.1.1
+faster-whisper>=1.1.0
+av<19  # PyAV 19 dropped metadata_errors argument expected by faster-whisper
+# Apple Silicon (several times faster on M-series Macs), then set transcribe.backend = "mlx_whisper":
+# mlx-whisper>=0.4.0

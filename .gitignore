@@ -1,0 +1,13 @@
+data/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+# tooling caches
+mutants/
+html/
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage

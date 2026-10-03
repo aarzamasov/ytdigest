@@ -1,0 +1,7 @@
+# Development tooling (none of this is needed to run yt2text or the core test suite).
+ruff>=0.6          # lint + formatter: ruff check . && ruff format --check .
+mypy>=1.10         # static types: mypy  (config in pyproject.toml)
+pytest>=8          # alternative runner: pytest tests/
+hypothesis>=6      # property-based tests in tests/test_properties.py (skipped when missing)
+mutmut>=3          # mutation testing: mutmut run && mutmut results
+coverage>=7        # coverage run -m pytest tests/ && coverage report -m

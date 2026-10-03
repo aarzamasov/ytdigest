@@ -1,0 +1,50 @@
+[project]
+name = "yt2text"
+version = "0.3.0"
+description = "YouTube channel / playlist / video -> audio -> local Whisper -> Markdown digests with clickable time codes"
+requires-python = ">=3.11"
+dependencies = ["yt-dlp>=2025.1.1", "faster-whisper>=1.1.0"]
+
+[project.optional-dependencies]
+mlx = ["mlx-whisper>=0.4.0"]            # Apple Silicon backend
+dev = ["ruff>=0.6", "mypy>=1.10", "pytest>=8", "hypothesis>=6", "mutmut>=3", "coverage>=7"]
+
+# ---------------------------------------------------------------- ruff (lint)
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["mutants", "data"]     # mutmut's working copy and runtime data
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]                       # long lines: tables and URLs in the code read better unwrapped
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]                    # sys.path shim before the ytt imports
+
+[tool.ruff.lint.isort]
+known-first-party = ["ytt", "fakes", "main"]
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.11"
+files = ["ytt", "main.py"]
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["yt_dlp", "yt_dlp.*", "faster_whisper", "mlx_whisper"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+pythonpath = ["tests", "."]
+
+# ---------------------------------------------------------------- mutmut (mutation testing)
+[tool.mutmut]
+source_paths = ["ytt", "main.py"]
+pytest_add_cli_args_test_selection = ["tests/"]

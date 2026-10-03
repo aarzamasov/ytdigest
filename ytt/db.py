@@ -370,13 +370,14 @@ class Database:
         with self.conn:
             self.conn.execute("UPDATE videos SET status = 'error', error = ? WHERE id = ?", (message, video_id))
 
-    def reset_video(self, video_id: str) -> None:
+    def reset_video(self, video_id: str, reset_audio: bool = False) -> None:
         with self.conn:
+            audio_clause = ", audio_path = NULL" if reset_audio else ""
             self.conn.execute(
-                """
+                f"""
                 UPDATE videos
                 SET status = 'pending', transcript_path = NULL, home_playlist_id = NULL,
-                    transcribed_at = NULL, attempts = 0, error = NULL
+                    transcribed_at = NULL, attempts = 0, error = NULL{audio_clause}
                 WHERE id = ?
                 """,
                 (video_id,),

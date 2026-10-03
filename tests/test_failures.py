@@ -135,5 +135,29 @@ def test_transcript_moved_between_playlists_keeps_one_file() -> None:
         assert h.read("_ALL.md").count(f"Это транскрипт файла {vid(1)}") == 1
 
 
+def test_redo_and_redo_audio() -> None:
+    with Harness() as h:
+        channel, _ = h.run("@doctest")
+        assert h.statuses()[vid(1)] == "done"
+        downloads_before = h.downloader.downloads
+        transcriptions_before = h.transcriber.calls
+
+        # --redo on channel/playlist scope without only_video raises ValueError
+        expect_raises(ValueError, h.pipeline.process, channel, redo=True)
+
+        # --redo reuses existing audio file and re-transcribes
+        v1_url = f"https://www.youtube.com/watch?v={vid(1)}"
+        h.run(v1_url, redo=True)
+        assert h.downloader.downloads == downloads_before, "audio was reused, no new download"
+        assert h.transcriber.calls == transcriptions_before + 1, "video was transcribed again"
+        assert h.statuses()[vid(1)] == "done"
+
+        # --redo_audio removes audio and downloads it fresh
+        h.run(v1_url, redo_audio=True)
+        assert h.downloader.downloads == downloads_before + 1, "audio was re-downloaded"
+        assert h.transcriber.calls == transcriptions_before + 2, "video was transcribed again"
+        assert h.statuses()[vid(1)] == "done"
+
+
 if __name__ == "__main__":
     run_tests(globals())

@@ -53,7 +53,7 @@ Dependency direction (no cycles): `main → pipeline → {youtube, db, downloade
 ### `main.py`
 - Builds the argument parser: subcommands `run`, `sync`, `process`, `build`, `status`; a positional `target`
   with a mutually exclusive `--channel / --playlist / --video` group (`dest="kind"`); `--limit`,
-  `--retry-errors` on `run`/`process`; `--force` on `build`; global `-c/--config`, `-v/--verbose`.
+  `--retry-errors`, `--redo`, `--redo-audio` on `run`/`process`; `--force` on `build`; global `-c/--config`, `-v/--verbose`.
 - `scope(target)` turns a `Target` into `only_playlist` / `only_video` for `Pipeline.process` / `build`.
 - Loads `Config`, sets up logging (console + `data/ytt.log`), opens the `Database`, dispatches to `Pipeline`.
   Exit codes: 0 ok, 1 runtime error (clean one-line message, traceback at DEBUG), 2 bad target, 130 Ctrl+C.

@@ -115,6 +115,8 @@ python main.py run @channel --limit 3                   # пробный зап�
 python main.py run @channel                             # весь канал целиком
 python main.py run "https://www.youtube.com/playlist?list=PL…"   # один плейлист
 python main.py run "https://youtu.be/…"                 # одно видео
+python main.py run "https://youtu.be/…" --redo          # перераспознать одно видео (использует аудио, если есть)
+python main.py run "https://youtu.be/…" --redo-audio    # заново скачать аудио и перераспознать одно видео
 python main.py status @channel                          # прогресс; также принимает URL видео / плейлиста
 python main.py run @channel --retry-errors              # повторить упавшие видео
 python main.py build @channel --force                   # пересобрать все дайджесты

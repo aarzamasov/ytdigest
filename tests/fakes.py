@@ -124,6 +124,10 @@ class FakeDownloader:
     def check(self) -> None:
         pass
 
+    def find_existing(self, audio_dir: Path, video_id: str) -> Path | None:
+        path = audio_dir / f"{video_id}.mp3"
+        return path if path.exists() and path.stat().st_size > 0 else None
+
     def download(self, url: str, video_id: str, audio_dir: Path) -> Path:
         if video_id in self.interrupt_ids:
             raise KeyboardInterrupt

@@ -241,6 +241,8 @@ class Pipeline:
         ch: Row,
         limit: int | None = None,
         retry_errors: bool = False,
+        redo: bool = False,
+        redo_audio: bool = False,
         only_playlist: str | None = None,
         only_video: str | None = None,
     ) -> None:
@@ -251,6 +253,10 @@ class Pipeline:
         """
         cid = ch["id"]
         layout = Layout(self.cfg, ch["dir_name"])
+        if redo or redo_audio:
+            if only_video is None:
+                raise ValueError("--redo and --redo-audio can only be used with a single video target")
+            self._redo_video(cid, only_video, redo_audio=redo_audio, layout=layout)
         playlists = self._scoped_playlists(cid, only_playlist, only_video)
         if retry_errors:
             scope = None
@@ -296,6 +302,36 @@ class Pipeline:
             homes = set(self.db.video_playlist_ids(only_video))
             playlists = [p for p in playlists if p["id"] in homes]
         return playlists
+
+    def _redo_video(self, channel_id: str, video_id: str, redo_audio: bool, layout: Layout) -> None:
+        row = self.db.get_video(video_id)
+        if row is None:
+            return
+        if row["transcript_path"]:
+            old_transcript = Path(row["transcript_path"])
+            if old_transcript.exists():
+                try:
+                    old_transcript.unlink()
+                    log.info("Removed existing transcript: %s", old_transcript.name)
+                except OSError as exc:
+                    log.warning("Could not remove transcript %s: %s", old_transcript, exc)
+        if redo_audio:
+            audio_paths: set[Path] = set()
+            if row["audio_path"]:
+                audio_paths.add(Path(row["audio_path"]))
+            if hasattr(self.downloader, "find_existing"):
+                existing = self.downloader.find_existing(layout.audio_dir, video_id)
+                if existing:
+                    audio_paths.add(existing)
+            for p in audio_paths:
+                if p.exists():
+                    try:
+                        p.unlink()
+                        log.info("Removed existing audio: %s", p.name)
+                    except OSError as exc:
+                        log.warning("Could not remove audio %s: %s", p, exc)
+        self.db.reset_video(video_id, reset_audio=redo_audio)
+        log.info("Reset video %s for re-processing", video_id)
 
     def _needs_work(self, row: Row) -> bool:
         return row["status"] not in (Status.DONE, Status.SKIPPED) and row["attempts"] < self.cfg.download.max_attempts

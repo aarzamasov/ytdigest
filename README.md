@@ -113,6 +113,8 @@ python main.py run @channel --limit 3                   # test drive on three vi
 python main.py run @channel                             # full channel
 python main.py run "https://www.youtube.com/playlist?list=PL…"   # one playlist
 python main.py run "https://youtu.be/…"                 # one video
+python main.py run "https://youtu.be/…" --redo          # re-transcribe one video (reuses audio if present)
+python main.py run "https://youtu.be/…" --redo-audio    # re-download audio and re-transcribe one video
 python main.py status @channel                          # progress; also accepts a video / playlist URL
 python main.py run @channel --retry-errors              # retry failed videos
 python main.py build @channel --force                   # rewrite all digests

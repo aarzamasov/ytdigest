@@ -70,6 +70,17 @@ def build_parser() -> argparse.ArgumentParser:
     def with_process_options(p: argparse.ArgumentParser) -> argparse.ArgumentParser:
         p.add_argument("--limit", type=int, help="process at most N videos in this run (handy for a test drive)")
         p.add_argument("--retry-errors", action="store_true", help="reset attempt counters of failed videos")
+        redo_grp = p.add_mutually_exclusive_group()
+        redo_grp.add_argument(
+            "--redo",
+            action="store_true",
+            help="re-transcribe video (reuses existing audio if present; single video only)",
+        )
+        redo_grp.add_argument(
+            "--redo-audio",
+            action="store_true",
+            help="re-download audio and re-transcribe (single video only)",
+        )
         return p
 
     with_process_options(with_target(sub.add_parser("run", help="sync + process + build")))
@@ -101,6 +112,11 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as exc:
         log.error("%s", exc)
         return 2
+
+    if (getattr(args, "redo", False) or getattr(args, "redo_audio", False)) and target.kind != Kind.VIDEO:
+        log.error("--redo and --redo-audio can only be used with a single video target")
+        return 2
+
     log.info("Target: %s", target.label)
     if target.note:
         log.info("Note: %s", target.note)
@@ -111,14 +127,28 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "run":
             channel = pipeline.sync(target)
-            pipeline.process(channel, limit=args.limit, retry_errors=args.retry_errors, **narrowing)
+            pipeline.process(
+                channel,
+                limit=args.limit,
+                retry_errors=args.retry_errors,
+                redo=args.redo,
+                redo_audio=args.redo_audio,
+                **narrowing,
+            )
             print("\n" + pipeline.status(channel, video_id=narrowing["only_video"]))
         elif args.command == "sync":
             channel = pipeline.sync(target)
             print("\n" + pipeline.status(channel, video_id=narrowing["only_video"]))
         elif args.command == "process":
             channel = pipeline.resolve_channel(target, online=False)
-            pipeline.process(channel, limit=args.limit, retry_errors=args.retry_errors, **narrowing)
+            pipeline.process(
+                channel,
+                limit=args.limit,
+                retry_errors=args.retry_errors,
+                redo=args.redo,
+                redo_audio=args.redo_audio,
+                **narrowing,
+            )
             print("\n" + pipeline.status(channel, video_id=narrowing["only_video"]))
         elif args.command == "build":
             channel = pipeline.resolve_channel(target, online=False)

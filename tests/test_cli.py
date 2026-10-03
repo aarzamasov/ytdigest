@@ -79,6 +79,8 @@ def test_offline_commands() -> None:
         assert cli_("build", "https://www.youtube.com/playlist?list=PLbbb")[0] == 0
         assert cli_("run", "https://www.youtube.com/playlist?list=PLccc", "--retry-errors")[0] == 0
         assert cli_.statuses()[vid(8)] == "done"
+        assert cli_("process", "https://youtu.be/vid00000004", "--redo")[0] == 0
+        assert cli_("run", "https://youtu.be/vid00000004", "--redo-audio")[0] == 0
         assert cli_("-v", "status", "@doctest")[0] == 0, "verbose flag accepted"
 
 
@@ -86,11 +88,17 @@ def test_exit_codes() -> None:
     with Cli() as cli_:
         assert cli_("run", "https://google.com/watch?v=x")[0] == 2, "not a YouTube URL"
         assert cli_("run", "@doctest", "--video")[0] == 2, "forced kind without an id"
+        assert cli_("run", "@doctest", "--redo")[0] == 2, "redo on channel is rejected"
+        assert cli_("run", "https://www.youtube.com/playlist?list=PLaaa", "--redo-audio")[0] == 2, (
+            "redo-audio on playlist is rejected"
+        )
         assert cli_("status", "https://www.youtube.com/playlist?list=PLnope0000000000000000000")[0] == 1, (
             "unknown playlist offline"
         )
         exc = expect_raises(SystemExit, cli_, "run", "x", "--video", "--playlist")
         assert exc.code == 2, "mutually exclusive kind flags are rejected by argparse"
+        exc = expect_raises(SystemExit, cli_, "run", "https://youtu.be/vid00000001", "--redo", "--redo-audio")
+        assert exc.code == 2, "mutually exclusive redo flags are rejected by argparse"
         exc = expect_raises(SystemExit, cli_)
         assert exc.code == 2, "a subcommand is required"
 
